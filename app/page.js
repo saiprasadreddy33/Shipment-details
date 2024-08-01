@@ -1,11 +1,27 @@
-import Layout from '../components/Layout';
-import AuthForm from '../components/AuthForm';
+"use client";
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
-export default function HomePage() {
-  return (
-    <Layout>
-      <h1>Welcome to Shipment Management</h1>
-      <AuthForm />
-    </Layout>
-  );
-}
+const supabase = createClientComponentClient();
+
+const Home = () => {
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      console.log(data)
+      if (data.user) {
+        router.push('/dashboard');
+      } else {
+        router.push('/login');
+      }
+    };
+    checkUser();
+  }, []);
+
+  return <div>Loading...</div>;
+};
+
+export default Home;

@@ -1,30 +1,28 @@
-"use client";
-import ShipmentTable from '../../components/ShipmentTable';
-import ShipmentDetails from '../../components/ShipmentDetails';
-import SideBar from '@/components/Sidebar';
+"use client"
 import { useState } from 'react';
+import Layout from '@/components/Layout';
+import Sidebar from '@/components/Sidebar';
+import ShipmentDetails from '@/components/[id]';
+import ShipmentTable from '@/components/ShipmentTable';
+import '@/styles/globals.css'
 
-export default function DashboardPage() {
-  const [selectedShipmentId, setSelectedShipmentId] = useState(null);
+const Dashboard = () => {
+  const [selectedShipment, setSelectedShipment] = useState(null);
 
   return (
-    <div className="h-screen flex">
-      {/* Sidebar */}
-      <SideBar />
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="w-full flex-1 overflow-y-auto p-4">
-          <div className="w-full h-full flex flex-col">
-            <div className="w-full h-full flex">
-              <div className="flex-1 overflow-x-auto">
-                <ShipmentTable onSelectShipment={setSelectedShipmentId} />
-                {selectedShipmentId && <ShipmentDetails shipmentId={selectedShipmentId} />}
-              </div>
-            </div>
-          </div>
+    <Layout>
+      <div className="h-screen w-full flex">
+        <Sidebar onSelectShipment={setSelectedShipment} />
+        <div className="w-full h-auto overflow-x-auto">
+          {selectedShipment ? (
+            <ShipmentDetails shipmentId={selectedShipment} />
+          ) : (
+            <ShipmentTable onSelectShipment={setSelectedShipment} />
+          )}
         </div>
       </div>
-    </div>
+    </Layout>
   );
-}
+};
+
+export default Dashboard;
