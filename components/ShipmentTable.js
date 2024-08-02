@@ -274,9 +274,7 @@ const ShipmentTable = () => {
                     <Button onClick={handleClose} color="secondary">
                         Cancel
                     </Button>
-                    <Button onClick={handleSave} color="primary">
-                        Save
-                    </Button>
+                  
                 </DialogActions>
             </Dialog>
 

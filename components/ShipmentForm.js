@@ -79,12 +79,7 @@ const ShipmentForm = ({ shipment, setShipment, onSave }) => {
       </div>
       {error && <p className="text-red-500">{error}</p>}
       <div className="flex justify-end gap-4">
-        <button
-          onClick={() => setShipment(null)}
-          className="px-4 py-2 bg-gray-300 text-white rounded-md hover:bg-gray-400"
-        >
-          Cancel
-        </button>
+
         <button
           onClick={handleSave}
           disabled={isSaving}
