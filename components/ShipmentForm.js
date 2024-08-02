@@ -33,7 +33,7 @@ const ShipmentForm = ({ shipment, setShipment, onSave }) => {
         setError(error.message);
       } else {
         onSave(); // Notify parent component on save
-        setShipment(null);
+       // setShipment(null);
         alert('Shipment saved successfully!'); // Custom alert message
       }
     } else {

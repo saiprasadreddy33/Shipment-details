@@ -24,7 +24,6 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import Spinner from './Spinner';
 import ConfirmDialog from './ConfirmDialog';
 
-
 const supabase = createClientComponentClient();
 
 const ShipmentTable = () => {
@@ -39,14 +38,26 @@ const ShipmentTable = () => {
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [shipmentToDelete, setShipmentToDelete] = useState(null);
+    const [user, setUser] = useState(null);
 
     useEffect(() => {
-        fetchShipments();
+        fetchUser();
     }, []);
 
-    const fetchShipments = async () => {
+    const fetchUser = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            setUser(user);
+            fetchShipments(user.id);
+        }
+    };
+
+    const fetchShipments = async (userId) => {
         setLoading(true);
-        const { data, error } = await supabase.from('shipments').select('*');
+        const { data, error } = await supabase
+            .from('shipments')
+            .select('*')
+            .eq('user_id', userId); // Assuming there is a 'user_id' field in your shipments table
         if (!error) setShipments(data);
         setLoading(false);
     };
@@ -77,7 +88,7 @@ const ShipmentTable = () => {
     };
 
     const handleSave = async () => {
-        fetchShipments();
+        fetchShipments(user.id);
         handleClose();
     };
 
@@ -99,7 +110,7 @@ const ShipmentTable = () => {
         if (shipmentToDelete) {
             const { error } = await supabase.from('shipments').delete().eq('id', shipmentToDelete);
             if (!error) {
-                fetchShipments();
+                fetchShipments(user.id);
                 setConfirmDelete(false);
                 setShipmentToDelete(null);
             } else {
@@ -214,22 +225,16 @@ const ShipmentTable = () => {
                                     </div>
                                     <div className="flex items-center gap-1">
                                         <h4 className="text-gray-500 text-sm">Rows Per Page:</h4>
-                                        <div className="select flex items-center gap-3 px-3 text-sm py-1 border rounded-lg cursor-pointer">
-                                            <select
-                                                value={rowsPerPage}
-                                                onChange={(e) => handleChangeRowsPerPage(parseInt(e.target.value, 10))}
-                                                className="focus:outline-none bg-transparent cursor-pointer"
-                                            >
-                                                {[5, 10, 20].map((rows) => (
-                                                    <option key={rows} value={rows}>
-                                                        {rows}
-                                                    </option>
-                                                ))}
+                                        <div className="select flex items-center gap-3 px-3 text-sm py-1 border rounded-lg cursor-pointer border-gray-300">
+                                            <select value={rowsPerPage} onChange={(e) => handleChangeRowsPerPage(Number(e.target.value))} className="w-full focus:outline-none">
+                                                <option value={5}>5</option>
+                                                <option value={10}>10</option>
+                                                <option value={15}>15</option>
                                             </select>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex items-center gap-3">
                                     <button
                                         onClick={() => handleChangePage(Math.max(page - 1, 0))}
                                         disabled={page === 0}
@@ -237,22 +242,18 @@ const ShipmentTable = () => {
                                     >
                                         <ArrowBackIosIcon />
                                     </button>
-                                    {Array.from({ length: totalPages }, (_, index) => (
+                                    {[...Array(totalPages).keys()].slice(startPage, endPage + 1).map((index) => (
                                         <button
                                             key={index}
                                             onClick={() => handleChangePage(index)}
-                                            className={`pagination w-[30px] h-[30px] text-center rounded-full ${
-                                                page === index
-                                                    ? "bg-blue-500 text-white"
-                                                    : "text-gray-600"
-                                                }`}
+                                            className={`pagination px-2 py-1 ${index === page ? 'bg-blue-500 text-white rounded-md' : 'text-gray-600 cursor-pointer'}`}
                                         >
                                             {index + 1}
                                         </button>
                                     ))}
                                     <button
                                         onClick={() => handleChangePage(Math.min(page + 1, totalPages - 1))}
-                                        disabled={page === totalPages - 1}
+                                        disabled={page >= totalPages - 1}
                                         className="pagination text-gray-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         <ArrowForwardIosIcon />
@@ -265,26 +266,26 @@ const ShipmentTable = () => {
             )}
 
             <Dialog open={isEditing} onClose={handleClose}>
-                <DialogTitle>{currentShipment?.id ? 'Edit Shipment' : 'New Shipment'}</DialogTitle>
+                <DialogTitle>{currentShipment?.id ? 'Edit Shipment' : 'Create Shipment'}</DialogTitle>
                 <DialogContent>
-                    <ShipmentForm
-                        shipment={currentShipment}
-                        setShipment={setCurrentShipment}
-                        onSave={handleSave}
-                    />
+                    <ShipmentForm shipment={currentShipment} onSave={handleSave} />
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleClose}>Close</Button>
+                    <Button onClick={handleClose} color="secondary">
+                        Cancel
+                    </Button>
+                    <Button onClick={handleSave} color="primary">
+                        Save
+                    </Button>
                 </DialogActions>
             </Dialog>
 
-            {/* Confirmation Dialog for Deletion */}
             <ConfirmDialog
                 open={confirmDelete}
-                onClose={() => setConfirmDelete(false)}
                 onConfirm={confirmDeleteShipment}
+                onCancel={() => setConfirmDelete(false)}
                 title="Confirm Deletion"
-                message="Are you sure you want to delete this shipment?"
+                content="Are you sure you want to delete this shipment? This action cannot be undone."
             />
         </div>
     );

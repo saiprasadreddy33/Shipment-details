@@ -23,10 +23,15 @@ const Sidebar = ({ onShipmentsUpdated }) => {
 
   useEffect(() => {
     if (mounted) {
-      fetchShipments();
       fetchUser();
     }
   }, [mounted]);
+
+  useEffect(() => {
+    if (user) {
+      fetchShipments();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (onShipmentsUpdated) {
@@ -41,8 +46,10 @@ const Sidebar = ({ onShipmentsUpdated }) => {
         throw new Error('Network response was not ok');
       }
       const data = await response.json();
-      console.log('Fetched shipments:', data);
-      setShipments(data);
+      // Filter  based on the authenticated user's ID
+      const userShipments = data.filter(shipment => shipment.user_id === user.id);
+      console.log('Fetched shipments:', userShipments);
+      setShipments(userShipments);
     } catch (error) {
       console.error('Failed to fetch shipments:', error);
     }
@@ -54,9 +61,18 @@ const Sidebar = ({ onShipmentsUpdated }) => {
   };
 
   const handleLogout = async () => {
-    await fetch('/api/logout', { method: 'POST' });
-    router.push('/login');
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Failed to log out:', error.message);
+      } else {
+        router.push('/login');
+      }
+    } catch (error) {
+      console.error('An error occurred during logout:', error);
+    }
   };
+  
 
   const toggleProfileVisibility = () => {
     setIsProfileVisible(!isProfileVisible);
@@ -64,7 +80,7 @@ const Sidebar = ({ onShipmentsUpdated }) => {
 
   const toggleShipmentsVisibility = async () => {
     if (!isShipmentsVisible) {
-      await fetchShipments(); // Fetch updated shipments when opening
+      await fetchShipments();
     }
     setIsShipmentsVisible(!isShipmentsVisible);
   };
@@ -115,19 +131,19 @@ const Sidebar = ({ onShipmentsUpdated }) => {
         </button>
 
         <div className={`flex-1 overflow-auto transition-all duration-300 ease-in-out ${isShipmentsVisible ? 'opacity-100' : 'opacity-0'}`}>
-    <ul className="max-h-72 scrollbar-thin scrollbar-thumb-gray-500 scrollbar-track-gray-200">
-      {shipments.map((shipment) => (
-        <li
-          key={shipment.id}
-          className="p-3 hover:bg-gray-700 cursor-pointer flex items-center gap-2 rounded transition duration-300"
-          onClick={() => openShipmentModal(shipment)}
-        >
-          <FaBox className="text-lg" />
-          {!isCollapsed && <span className="font-medium">{shipment.tracking_number}</span>}
-        </li>
-      ))}
-    </ul>
-  </div>
+          <ul className="max-h-72 scrollbar-thin scrollbar-thumb-gray-500 scrollbar-track-gray-200">
+            {shipments.map((shipment) => (
+              <li
+                key={shipment.id}
+                className="p-3 hover:bg-gray-700 cursor-pointer flex items-center gap-2 rounded transition duration-300"
+                onClick={() => openShipmentModal(shipment)}
+              >
+                <FaBox className="text-lg" />
+                {!isCollapsed && <span className="font-medium">{shipment.tracking_number}</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
 
         <div className="flex flex-col mt-auto">
           <button
